@@ -1,12 +1,12 @@
 "use client";
 import React from "react";
 
-import { sepolia, mainnet } from "@starknet-react/chains";
+import { devnet } from "@starknet-react/chains";
 import {
   StarknetConfig,
   publicProvider,
   argent,
-  braavos,
+  // braavos,
   useInjectedConnectors,
   voyager
 } from "@starknet-react/core";
@@ -16,7 +16,7 @@ export function StarknetProvider({ children }) {
     // Show these connectors if the user has no connector installed.
     recommended: [
       argent(),
-      braavos(),
+      // braavos(),
     ],
     // Hide recommended connectors if the user has any connector installed.
     includeRecommended: "onlyIfNoConnectors",
@@ -26,7 +26,7 @@ export function StarknetProvider({ children }) {
 
   return (
     <StarknetConfig
-      chains={[mainnet, sepolia]}
+      chains={[devnet]}
       provider={publicProvider()}
       connectors={connectors}
       explorer={voyager}

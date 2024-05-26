@@ -1,3 +1,7 @@
 target
 
 /*/node_modules
+
+.tool-versions
+*.json
+*.txt
