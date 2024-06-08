@@ -5,25 +5,6 @@ function ConnectWallet() {
     const { address } = useAccount();
     const { connect, connectors } = useConnect();
     const { disconnect } = useDisconnect();
-    const [ abi, setAbi ] = useState();
-
-
-    const { provider } = useProvider();
-
-    function getAbi() {
-        provider.getClassAt("0x003252eb18679466af2b170874f49b722e24f5751cedb626e068da18a8a170e5").then(val => {
-            console.log(val);
-            setAbi(val)
-        })
-    }
- 
-    useEffect(() => {
-        getAbi();
-        
-    }, [address])
-
-    // console.log(provider.getClassAt("0x003252eb18679466af2b170874f49b722e24f5751cedb626e068da18a8a170e5"));
-
     return (
         <div className="p-4 my-2 w-full flex flex-col bg-slate-500 rounded-lg">
             <div className="flex mb-3">
