@@ -1,98 +1,123 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useRef } from 'react'
 import ConnectWallet from '../components/ConnectWallet'
-import { useAccount, useContract, useProvider, useContractWrite, useContractRead } from '@starknet-react/core'
+import { useAccount, useContract, useProvider, useContractWrite } from '@starknet-react/core'
 
-
-const CONTRACT_ADDRESS = "0x0254a85f6ad50ee9083f42d78d7e2c8b36cfea72eb413ca3a70131994de4b025";
+const CONTRACT_ADDRESS = "0x04f3caf1ea48801e6a7fb497c1fc499bab94c366e19934e2bd0a866902c4e52d";
 
 function Home() {
-  const { address, account } = useAccount();
-  const [abi, setAbi] = useState(null);
-  const { provider } = useProvider();
-  const { contract } = useContract({ abi, address: CONTRACT_ADDRESS });
-  const [newValue, setNewValue] = useState(10); // Assuming you have some state to hold the new value
+	const { address } = useAccount();
+	const [abi, setAbi] = useState(null);
+	const { provider } = useProvider();
+	const { contract } = useContract({ abi, address: CONTRACT_ADDRESS });
+	const [getVal, setGetVal] = useState(0);
+	const inputValRef = useRef(0);
+	const [, setInputValState] = useState(0); 
 
-  const contractReadData = useMemo(() => {
-    if (!address || !contract ) return [];
+	const calls = useMemo(() => {
 
+		if (!address || !contract) return [];
+		return contract.populateTransaction['set'](inputValRef.current);
 
-    return [{
-      address: contract?.address,
-      functionName: 'get',
-      abi: contract?.abi,
-      args: [address],
-      watch: true
-    }];
+	}, [contract, address, inputValRef.current]);
 
-  }, [contract, address]);
+	const { writeAsync } = useContractWrite({ calls });
 
+	const setStoredValue = async () => {
+		if (contract && address) {
+			try {
+				writeAsync().then(v => 
+					console.log("Value set successfully!")
+				);
+			} catch (error) {
+				console.error("Error setting value:", error);
+			}
+		}
+	};
 
-  
-  const { data, isLoading, error, refetch } = useContractRead(contractReadData);
+	async function getAbi() {
+		try {
+			const classInfo = await provider.getClassAt(CONTRACT_ADDRESS);
+			setAbi(classInfo.abi); 
+		} catch (error) {
+			console.error("Error fetching ABI:", error);
+		}
+	}
 
+	useEffect(() => {
+		if (address) {
+			getAbi();
+		}
+	}, [address]);
 
-  const calls = useMemo(() => {
-    if (!address || !contract) return [];
+	const getValue = async () => {
+		try {
+			const val = await contract.functions.get();
+			setGetVal(val);
+		} catch (error) {
+			console.error("Error getting value:", error);
+		}
+	};
 
-    const tx = {
-      contractAddress: contract.address,
-      functionName: 'set',
-      calldata: [address, newValue]
-    }
-    return [tx];
-  }, [contract, address, newValue]);
+	const handleChange = (e) => {
+		if(e.target.value) {
+			inputValRef.current = e.target.value;
+			setInputValState(inputValRef.current);
+		}
+		else {
+			inputValRef.current = 0;
+			setInputValState(inputValRef.current);
+		}
 
-  const { write } = useContractWrite({ calls });
-
-  function setStoredValue() {
-    if (contract && address) {
-      try {
-        write(newValue);
-        refetch();
-        console.log("Value set successfully!");
-      } catch (error) {
-        console.error("Error setting value:", error);
-      }
-    }
-  }
-  
-    async function getAbi() {
-        try {
-            const classInfo = await provider.getClassAt(CONTRACT_ADDRESS);
-            setAbi(classInfo.abi); 
-        } catch (error) {
-            console.error("Error fetching ABI:", error);
-        }
-    }
-
-  useEffect(() => {
-      if (address) {
-          getAbi();
-      }
-  }, [address]);
-
-  useEffect(() => {
-      if (contract && address) {
-          console.log("Contract initialized:", contract);
-          // contract.functions.get().then(val => console.log(val));
-          setStoredValue();
-          refetch();
-          console.log("DATA", isLoading, data);
-          contract.functions.get().then(val => console.log(val));
-      }
-  }, [contract, address]);
+	};
 
 
+	return (
+	<div className='h-full w-full flex flex-col '>
+
+		<div className='flex h-full w-full justify-center items-center'>
+
+			<ConnectWallet/>  
+			
+			{address && 
+				<div className='p-1 sm:p-4 w-3/5 md:w-2/5 absolute border-2 border-slate-400'>
+					<div className='text-3xl tracking-widest  font-bold pt-6 text-center'> Simple Storage Demo </div>		
+					<div className='text-xs pt-1 pb-6 truncate opacity-70 text-center'>{address}</div>
+
+					<div className='flex flex-col my-2 p-4'>
+						<div className='flex mb-4'>
+							<input type='number' min={0} placeholder='Data amount' onChange={handleChange} className='text-black p-2 outline-0 flex-grow m-1 rounded bg-slate-300'/>
+
+							<button onClick={setStoredValue} className='p-2 m-1 tracking-wider rounded  border-2 border-orange-600 hover:border-transparent hover:bg-orange-600   '>
+								Set value
+							</button>
+						</div>
+
+						<button onClick={getValue} className='p-2 m-1 tracking-wider rounded bg-orange-600 hover:bg-orange-700'>
+							Get data value
+						</button>
+						<div type='number' onChange={handleChange} className='text-black p-4 outline-0 flex-grow m-1 mt-2 rounded bg-slate-300'>
+							{getVal ? <span>{getVal.toString()}</span>  : <span className='italic opacity-40'> Data value in storage </span>}
+						</div>
+
+					</div>
+				</div>
+			}
+
+		</div>
+
+		<div className='mt-auto flex tracking-wide'>
+			<a className='flex ml-auto hover:cursor-pointer hover:text-sky-300 hover:underline' target='_blank' href='https://github.com/prashansatanwar/simple-storage-cairo'>	
+				<span className='px-1'>Github</span>
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+					<path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5"/>
+					<path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z"/>
+				</svg>
+			</a>
+		</div>
 
 
-  return (
-    <div className='h-full w-full flex flex-col '>
-      <div className='text-4xl font-bold'> Simple Storage </div>
-
-      <ConnectWallet/>
-
-    </div>
-  )
+	</div>
+	)
 }
 
 export default Home

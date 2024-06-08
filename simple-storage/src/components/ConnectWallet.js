@@ -1,45 +1,47 @@
-import React, { useEffect, useState } from "react";
-import { useAccount, useConnect, useContract, useDisconnect, useProvider } from "@starknet-react/core";
+import React from "react";
+import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
 
 function ConnectWallet() {
     const { address } = useAccount();
     const { connect, connectors } = useConnect();
     const { disconnect } = useDisconnect();
+
     return (
-        <div className="p-4 my-2 w-full flex flex-col bg-slate-500 rounded-lg">
-            <div className="flex mb-3">
+        <div className="w-full h-full">
+            <div className="font-medium absolute">
+                {address
+                    ? <div className="mt-0">
+                        <span>
+                            {address.substring(0,5)+"..."+address.substring(address.length-5)}
+                        </span>
+                        <button onClick={() => disconnect()} className="font-bold tracking-wide p-2 pl-8 hover:cursor-pointer text-red-400 hover:text-red-600">
+                            Disconnect
+                        </button>
+                    </div>
+                    : <span className="opacity-80 text-lg tracking-wide">
+                        Connect your wallet to begin
+                    </span>
+                    
+                }
+            </div>
 
-                <div className="text-xl font-bold ">Your Wallet</div>
-
-                <div className="text-base ml-auto">
-                    {address 
-                        ? // disconnect
-                            <div>
-                                <button onClick={() => disconnect()} className="p-1 px-2 rounded-lg bg-red-600 hover:bg-red-700">
-                                    Disconnect Wallet
-                                </button>
-                            </div>
-                        : // connect
-                            <div className="w-full flex justify-end">
-
+            {!address &&
+                <div className="p-4 py-8 my-2 h-full flex justify-center items-center">
+                            <div className="flex">
                                 {connectors.map((connector) => (
                                     <button
                                         key={connector.id}
                                         onClick={() => connect({ connector })}
                                         disabled={!connector.available()}
-                                        className="p-1 px-2 mx-2 bg-blue-500 hover:bg-blue-600 rounded-lg"
+                                        className="p-3 m-2 bg-orange-600 hover:bg-orange-700 rounded text-lg"
                                     >
                                             Connect {connector.name}
                                     </button>
                                 ))}
                             </div>
-                    }
                 </div>
-            </div>
+            }
 
-            <div className="h-[3em] flex items-center  p-2 bg-slate-600 rounded-lg">
-                {address || <div className="opacity-80 italic">Connect wallet to begin</div>}
-            </div>
 
         </div>
     );
